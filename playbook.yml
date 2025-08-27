@@ -1,0 +1,44 @@
+---
+- name: Configure AWS instances based on tags
+  hosts: all
+  gather_facts: true
+  vars:
+    aws_region: "us-east-1"
+
+  tasks:
+    - name: Get EC2 instance info (tags)
+      amazon.aws.ec2_instance_info:
+        instance_ids:
+          - "{{ hostvars[inventory_hostname]['ec2_instance_id'] | default(omit) }}"
+        region: "{{ aws_region }}"
+      delegate_to: localhost
+      register: instance_info
+      failed_when: false
+
+    - name: Fail if instance info missing
+      fail:
+        msg: "Cannot retrieve info for instance {{ hostvars[inventory_hostname]['ec2_instance_id'] | default('UNKNOWN') }}"
+      when: instance_info.failed or (instance_info.instances is not defined and (instance_info.results is defined and instance_info.results | length == 0))
+
+    - name: Set tags fact
+      set_fact:
+        tags: "{{ (instance_info.instances[0].tags if instance_info.instances is defined else instance_info.results[0].tags) | default({}) }}"
+
+    - name: Fail if instance is not managed
+      fail:
+        msg: "This instance is not managed by Ansible."
+      when: tags.Managed != "true"
+
+    - name: Run common tasks
+      include_role:
+        name: common
+      vars:
+        server_name: "{{ tags.Name }}"
+        restart_cron: "{{ tags.Restart | default('0 0 * * 0') }}"
+
+    - name: Run service role based on tag
+      include_role:
+        name: "{{ tags.Service | lower }}"
+      when: tags["Managed"] == 'true'
+      vars:
+        service_version: "{{ tags.Version | default('latest') }}"
