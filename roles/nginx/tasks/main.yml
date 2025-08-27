@@ -1,0 +1,32 @@
+---
+- name: Create NGINX mainline repo for Amazon Linux 2023
+  copy:
+    dest: /etc/yum.repos.d/nginx.repo
+    content: |
+      [nginx-mainline]
+      name=nginx mainline repo
+      baseurl=http://nginx.org/packages/mainline/centos/9/$basearch/
+      gpgcheck=1
+      enabled=1
+      gpgkey=https://nginx.org/keys/nginx_signing.key
+      module_hotfixes=true
+  become: yes
+
+- name: Install NGINX specific version
+  package:
+    name: "nginx-{{ tags['Version'] }}*"
+    state: present
+  become: yes
+
+- name: Ensure NGINX is started and enabled
+  systemd:
+    name: nginx
+    state: started
+    enabled: yes
+  become: yes
+
+- name: Downgrade NGINX if version higher than tag
+  shell: |
+    yum downgrade -y nginx-{{ tags['Version'] }}*
+  when: nginx_version.stderr is defined and nginx_version.stderr | regex_search(tags['Version']) is not defined
+  become: yes
