@@ -1,0 +1,32 @@
+---
+- name: Fail if Version tag is missing
+  fail:
+    msg: "Instance {{ inventory_hostname }} has no Version tag defined!"
+  when: tags['Version'] is not defined
+
+- name: Fail if Version tag is not 10.5
+  fail:
+    msg: "Only MariaDB 10.5 is supported in this playbook for now!"
+  when: tags['Version'] != '10.5'
+
+- name: Install MariaDB 10.5 packages
+  package:
+    name:
+      - mariadb105-server
+      - mariadb105
+    state: present
+  become: yes
+
+- name: Ensure MariaDB service is started and enabled
+  systemd:
+    name: mariadb
+    state: started
+    enabled: yes
+  become: yes
+
+- name: Downgrade MariaDB if installed version is higher than tag
+  shell: "dnf downgrade -y mariadb105-server mariadb105"
+  when:
+    - mariadb_version.stdout is defined
+    - mariadb_version.stdout | regex_search('10\.5') is not defined
+  become: yes
