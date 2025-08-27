@@ -1,0 +1,14 @@
+all:
+  hosts:
+    mariadb_instance:
+      ansible_host: 44.214.118.27
+      ansible_user: ec2-user
+      ec2_instance_id: i-094811ab4f003d1a6
+      ansible_private_key_file: ~/yoavkey.pem
+      ansible_python_interpreter: /usr/bin/python3
+    nginx_instance:
+      ansible_host: 3.236.31.205
+      ansible_user: ec2-user
+      ec2_instance_id: i-0c55974d1094ad9ce
+      ansible_private_key_file: ~/yoavkey.pem
+      ansible_python_interpreter: /usr/bin/python3
