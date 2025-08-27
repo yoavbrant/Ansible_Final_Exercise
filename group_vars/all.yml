@@ -1,0 +1,17 @@
+---
+aws_region: us-east-1
+
+# Default package managers for Amazon Linux 2023
+package_manager: dnf
+
+# Map of weekday names if you ever want to parse human-readable Restart tag
+day_map:
+  Sunday: 0
+  Monday: 1
+  Tuesday: 2
+  Wednesday: 3
+  Thursday: 4
+  Friday: 5
+  Saturday: 6
+
+reboot_cron_job: true
