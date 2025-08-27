@@ -1,0 +1,30 @@
+---
+- name: Ensure cron package is installed
+  package:
+    name: cronie
+    state: present
+  become: yes
+
+- name: Set hostname from Name tag
+  hostname:
+    name: "{{ tags['Name'] }}"
+  become: yes
+  when: tags['Name'] is defined
+
+- name: Parse Restart tag (cron format "min hour * * weekday")
+  set_fact:
+    restart_cron: "{{ tags['Restart'] | default(omit) }}"
+  when: tags['Restart'] is defined
+
+- name: Create crontab for server restart
+  cron:
+    name: "Restart server as per Restart tag"
+    minute: "{{ restart_cron.split()[0] }}"
+    hour: "{{ restart_cron.split()[1] }}"
+    day: "{{ restart_cron.split()[2] | default('*') }}"
+    month: "{{ restart_cron.split()[3] | default('*') }}"
+    weekday: "{{ restart_cron.split()[4] | default('*') }}"
+    job: "/sbin/shutdown -r now"
+    state: present
+  become: yes
+  when: restart_cron is defined
